@@ -1,0 +1,14 @@
+# Python
+__pycache__/
+*.pyc
+.venv/
+# Дані та результати експериментів (генеруються train.py)
+data/
+results/
+# Артефакти збірки
+firmware/gcc/*/bin/
+firmware/host/*.o
+firmware/host/gas_host
+firmware/host/gas_host_test
+firmware/host/gen_test_model
+firmware/host/test_src/

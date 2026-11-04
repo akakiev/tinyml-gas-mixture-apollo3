@@ -1,0 +1,8 @@
+# Python 3.10 або 3.11
+tensorflow==2.15.1
+# tf_keras НЕ встановлюйте з TF 2.15 (потрібен лише для TF >= 2.16)
+tensorflow-model-optimization==0.8.0
+numpy<2
+pandas
+scikit-learn
+pyserial
