@@ -25,7 +25,7 @@ build() {  # name variant kernels arena extra_defs
   echo "=== $name: variant=$variant kernels=$kernels arena=$arena defs=$defs"
   python3 "$REPO/python/use_variant.py" "$variant"
   ( cd "$REPO/firmware/gcc"
-    make clean >/dev/null 2>&1 || true
+    rm -rf edge                         # повне очищення: EXTRA_DEFS змінюються між варіантами
     make SDKPATH="$SDK" TFLM_DIR="$TFLM" TOOLCHAIN="$TC" TFLM_KERNELS="$kernels" \
          ARENA_SIZE="$arena" EXTRA_DEFS="$defs" 2>&1 | tee "$OUT/$name.log"
     cp edge/bin/gas_tinyml_asb.bin "$OUT/$name.bin"
@@ -36,6 +36,11 @@ build A_float32_48MHz float32  reference 65536 "-DPROFILE_PIN=$PROFILE_PIN"
 build B_int8_48MHz    qat_int8 cmsis_nn  16384 "-DPROFILE_PIN=$PROFILE_PIN"
 build C_int8_96MHz    qat_int8 cmsis_nn  16384 "-DUSE_BURST_MODE -DPROFILE_PIN=$PROFILE_PIN"
 python3 "$REPO/python/use_variant.py" qat_int8
+
+# Перевірка: прошивка C (TurboSPOT) мусить відрізнятися від B
+if cmp -s "$OUT/B_int8_48MHz.bin" "$OUT/C_int8_96MHz.bin"; then
+  echo "ПОМИЛКА: B і C однакові — -DUSE_BURST_MODE не потрапив у збірку"; exit 1
+fi
 
 { echo "tflite-micro: $(git -C "$TFLM" rev-parse HEAD)"
   echo "AmbiqSuiteSDK: $(git -C "$SDK" rev-parse HEAD)"

@@ -35,6 +35,7 @@ ARENA_SIZE      ?= 16384
 HIL_BAUD        ?= 115200
 EXTRA_DEFS      ?=
 
+ifneq ($(MAKECMDGOALS),clean)
 ifeq ($(SDKPATH),)
     $(error Вкажіть SDKPATH=шлях до AmbiqSuiteSDK (git clone --recursive https://github.com/sparkfun/AmbiqSuiteSDK))
 endif
@@ -43,6 +44,7 @@ ifeq ($(TFLM_DIR),)
 endif
 ifeq ($(TFLM_LIB),)
     $(error Не знайдено libtensorflow-microlite.a для cortex-m4+fp і TFLM_KERNELS=$(TFLM_KERNELS) — див. HIL_KIT_README.md, крок 4)
+endif
 endif
 ifeq ($(COM_PORT),)
     COM_PORT = COM4
@@ -93,9 +95,9 @@ SIZE = $(TOOLCHAIN)-size
 RM   = rm
 
 ARCH   = -mthumb -mcpu=$(CPU) -mfpu=$(FPU) -mfloat-abi=$(FABI)
-CFLAGS = $(ARCH) -ffunction-sections -fdata-sections -MMD -MP -Wall -g -O2 $(DEFINES) $(INCLUDES)
-XFLAGS = $(CFLAGS) -std=gnu++17 -fno-rtti -fno-exceptions -fno-threadsafe-statics -fno-use-cxa-atexit
-CFLAGS += -std=c99
+COMMONFLAGS = $(ARCH) -ffunction-sections -fdata-sections -MMD -MP -Wall -g -O2 $(DEFINES) $(INCLUDES)
+XFLAGS = $(COMMONFLAGS) -std=gnu++17 -fno-rtti -fno-exceptions -fno-threadsafe-statics -fno-use-cxa-atexit
+CFLAGS = $(COMMONFLAGS) -std=c99
 LFLAGS = $(ARCH) -nostartfiles -static --specs=nano.specs --specs=nosys.specs
 LFLAGS += -Wl,--gc-sections,--entry,Reset_Handler,-Map,$(CONFIG)/$(TARGET).map
 LFLAGS += -Wl,--start-group $(TFLM_LIB) -lstdc++ -lm -lc -lgcc $(LIBS) -Wl,--end-group
