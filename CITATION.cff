@@ -5,6 +5,14 @@ title: "tinyml-gas-mixture-apollo3: TinyML gas-mixture recognition on the Ambiq 
 version: 1.0.0
 date-released: "2026-11-13"
 license: MIT
+doi: "10.5281/zenodo.24207494"
+identifiers:
+  - type: doi
+    value: "10.5281/zenodo.24207494"
+    description: "Version 1.0.0 (paper version)"
+  - type: doi
+    value: "10.5281/zenodo.24207493"
+    description: "All versions (concept DOI)"
 repository-code: "https://github.com/akakiev/tinyml-gas-mixture-apollo3"
 authors:
   - family-names: Baraban

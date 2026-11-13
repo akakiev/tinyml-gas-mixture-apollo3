@@ -1,5 +1,6 @@
 # TinyML gas-mixture recognition on the Ambiq Apollo3 Blue (SparkFun Edge)
 
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.24207494.svg)](https://doi.org/10.5281/zenodo.24207494)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
 Code and on-board results for the paper
@@ -136,7 +137,9 @@ https://doi.org/10.1016/j.snb.2015.03.028. The data are not redistributed here.
 
 If you use this code, please cite the paper above and this software archive (see [`CITATION.cff`](CITATION.cff)):
 
-> Baraban, S., Zhahlovska, O. (2026). tinyml-gas-mixture-apollo3 (v1.0.0). Zenodo.
+> Baraban, S., Zhahlovska, O. (2026). tinyml-gas-mixture-apollo3 (v1.0.0). Zenodo. https://doi.org/10.5281/zenodo.24207494
+
+The DOI above identifies version 1.0.0, the version used in the paper; https://doi.org/10.5281/zenodo.24207493 always resolves to the latest version.
 
 ## Authors and maintenance
 

@@ -3,7 +3,7 @@
 *TinyML recognition of gas-mixture composition and concentration estimation with a multi-task
 depthwise-separable 1D-CNN (4.4 k parameters, int8) on the Ambiq Apollo3 Blue microcontroller
 (SparkFun Edge): training, PTQ/QAT quantization, TensorFlow Lite Micro firmware and
-hardware-in-the-loop evaluation. English description: [README.md](README.md).*
+hardware-in-the-loop evaluation. English description: [README.md](README.md). DOI: https://doi.org/10.5281/zenodo.24207494*
 
 Код для експериментів до статті «TinyML Gas-Mixture Recognition on an Ultra-Low-Power
 Microcontroller: Lessons from Simulation and Leakage-Free Real-Data Evaluation» (AIR'2026): навчання DS-1D-CNN, квантизація,
