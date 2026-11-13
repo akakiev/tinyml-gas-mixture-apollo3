@@ -6,6 +6,13 @@
 //   -DPROFILE_PIN=<GPIO>  номер вільного GPIO, який тримається в «1» під час бенчмарку
 //                         (тригер для PPK2/Joulescope). За замовчуванням вимкнено:
 //                         не використовуйте світлодіод — його струм спотворить вимірювання.
+//
+// Енергетичні режими (для табл. «Measurements on the SparkFun Edge»):
+//   hal_sleep_forever()  — UART вимкнено, піни UART відключено, ядро в deep sleep назавжди
+//                          (струм I_sleep; вихід — кнопка RST або перевідкриття порту, DTR).
+//   hal_duty_*()         — режим «одне виведення за період»: між виведеннями deep sleep,
+//                          пробудження від STIMER (LFRC ~1024 Гц, точність ±кілька %, тому
+//                          реальний період дивіться на профайлері). SRAM зберігається повністю.
 #include "am_mcu_apollo.h"
 #include "am_bsp.h"
 #include "hal.h"
@@ -103,4 +110,105 @@ void hal_profile_pin(int level)
 #else
     (void)level;
 #endif
+}
+
+// ---------------------------------------------------------------- енергетичні режими
+static volatile uint32_t s_tick_pending;
+static uint32_t s_period_ticks = 1024u;
+static uint32_t s_primask_saved;
+
+// Обробник переривання STIMER COMPARE A (ім'я — з startup_gcc.c SDK; С-лінкування)
+void am_stimer_cmpr0_isr(void)
+{
+    am_hal_stimer_int_clear(AM_HAL_STIMER_INT_COMPAREA);
+    am_hal_stimer_compare_delta_set(0, s_period_ticks);
+    s_tick_pending = 1;
+}
+
+static void uart_off(int tx_idle_high)
+{
+    am_hal_uart_tx_flush(s_uart);                                   // дочекатися відправлення
+    am_hal_uart_power_control(s_uart, AM_HAL_SYSCTRL_DEEPSLEEP, true);
+    if (tx_idle_high)
+    {
+        // TX тримаємо у «1» (стан спокою UART), щоб ПК не бачив сміття, поки UART вимкнено
+        am_hal_gpio_pinconfig(AM_BSP_GPIO_COM_UART_TX, g_AM_HAL_GPIO_OUTPUT);
+        am_hal_gpio_output_set(AM_BSP_GPIO_COM_UART_TX);
+    }
+    else
+    {
+        am_hal_gpio_pinconfig(AM_BSP_GPIO_COM_UART_TX, g_AM_HAL_GPIO_DISABLE);
+    }
+    am_hal_gpio_pinconfig(AM_BSP_GPIO_COM_UART_RX, g_AM_HAL_GPIO_DISABLE);
+}
+
+static void uart_on(void)
+{
+    am_hal_uart_power_control(s_uart, AM_HAL_SYSCTRL_WAKE, true);
+    am_hal_gpio_pinconfig(AM_BSP_GPIO_COM_UART_TX, g_AM_BSP_GPIO_COM_UART_TX);
+    am_hal_gpio_pinconfig(AM_BSP_GPIO_COM_UART_RX, g_AM_BSP_GPIO_COM_UART_RX);
+}
+
+void hal_sleep_forever(void)
+{
+    uart_off(0);
+#if PROFILE_PIN >= 0
+    am_hal_gpio_output_clear(PROFILE_PIN);
+#endif
+#ifdef USE_BURST_MODE
+    {
+        am_hal_burst_mode_e mode;
+        am_hal_burst_mode_disable(&mode);
+    }
+#endif
+    CoreDebug->DEMCR &= ~CoreDebug_DEMCR_TRCENA_Msk;                // вимкнути DWT/трасування
+    am_hal_interrupt_master_disable();
+    while (1)
+    {
+        am_hal_sysctrl_sleep(AM_HAL_SYSCTRL_SLEEP_DEEP);
+    }
+}
+
+void hal_duty_begin(uint32_t period_ms)
+{
+    uint32_t t = (period_ms * 1024u + 500u) / 1000u;
+    s_period_ticks = t < 2u ? 2u : t;
+    uart_off(1);
+    s_tick_pending = 0;
+    am_hal_stimer_int_clear(AM_HAL_STIMER_INT_COMPAREA);
+    am_hal_stimer_config(AM_HAL_STIMER_CFG_CLEAR | AM_HAL_STIMER_CFG_FREEZE);
+    am_hal_stimer_config(AM_HAL_STIMER_LFRC_1KHZ | AM_HAL_STIMER_CFG_COMPARE_A_ENABLE);
+    am_hal_stimer_compare_delta_set(0, s_period_ticks);
+    am_hal_stimer_int_enable(AM_HAL_STIMER_INT_COMPAREA);
+    NVIC_EnableIRQ(STIMER_CMPR0_IRQn);
+    s_primask_saved = am_hal_interrupt_master_enable();          // повернемо в hal_duty_end()
+}
+
+void hal_duty_wait(void)
+{
+    // Перевірка прапорця й засинання — під PRIMASK=1, щоб не пропустити тік між ними.
+    // WFI прокидається від відкладеного переривання і при PRIMASK=1; обробник виконується
+    // одразу після відновлення PRIMASK.
+    for (;;)
+    {
+        uint32_t st = am_hal_interrupt_master_disable();
+        if (s_tick_pending)
+        {
+            s_tick_pending = 0;
+            am_hal_interrupt_master_set(st);
+            return;
+        }
+        am_hal_sysctrl_sleep(AM_HAL_SYSCTRL_SLEEP_DEEP);
+        am_hal_interrupt_master_set(st);
+    }
+}
+
+void hal_duty_end(void)
+{
+    NVIC_DisableIRQ(STIMER_CMPR0_IRQn);
+    am_hal_stimer_int_disable(AM_HAL_STIMER_INT_COMPAREA);
+    am_hal_stimer_int_clear(AM_HAL_STIMER_INT_COMPAREA);
+    am_hal_stimer_config(AM_HAL_STIMER_CFG_CLEAR | AM_HAL_STIMER_CFG_FREEZE);
+    am_hal_interrupt_master_set(s_primask_saved);
+    uart_on();
 }

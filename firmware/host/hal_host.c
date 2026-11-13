@@ -27,3 +27,9 @@ uint32_t hal_cycles(void)          // наносекунди замість та
 
 uint32_t hal_cpu_hz(void) { return 1000000000u; }
 void hal_profile_pin(int level) { (void)level; }
+
+// Енергетичні режими на ПК не мають сенсу: заглушки, щоб той самий main.cc збирався й тут.
+void hal_sleep_forever(void) { fflush(stdout); }
+void hal_duty_begin(uint32_t period_ms) { (void)period_ms; }
+void hal_duty_wait(void) {}
+void hal_duty_end(void) {}

@@ -12,3 +12,6 @@ firmware/host/gas_host
 firmware/host/gas_host_test
 firmware/host/gen_test_model
 firmware/host/test_src/
+# Прошивки з build_all.sh і копія завантажувача ASB
+builds/
+tools/

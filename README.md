@@ -118,6 +118,11 @@ make TFLM_DIR=~/tflite-micro && python ../../python/hil_host.py --exec ./gas_hos
 ```
 
 ## 5. HIL-вимірювання й табл. 3
+> **Оновлення (листопад 2026).** Покрокова інструкція для SparkFun Edge, енергетичні режими прошивки
+> (deep sleep, «1 виведення/с»), готові варіанти моделі статті та скрипти `build_all.sh` / `flash.cmd` —
+> у [HIL_KIT_README.md](HIL_KIT_README.md). Модель для вимірювань перемикайте `python/use_variant.py`,
+> а не `export_firmware.py`.
+
 
 ```bash
 cd python

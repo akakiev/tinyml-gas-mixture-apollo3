@@ -9,12 +9,16 @@
 //   ПК -> МК:  A5 5A 'P'                         — інформація про модель
 //              A5 5A 'I' + float32[WIN*N_CH]     — виведення на одному вікні
 //              A5 5A 'B' + uint16 n              — бенчмарк: n виведень на останньому вікні
+//              A5 5A 'D' + uint16 n + uint16 T   — енергорежим: n циклів «deep sleep -> передобробка
+//                                                  + виведення» з періодом T мс (UART вимкнено)
+//              A5 5A 'S'                         — deep sleep назавжди (для I_sleep; вихід — RST)
 //   МК -> ПК:  текстові рядки:
 //              "# key=value ..."                 — інформація
 //              "R,cls,l0,l1,l2,l3,r0,r1,eth_mppm,gas_mppm,cyc_pre,cyc_inf"
 //                 l* і r* — сирі int8-виходи (для побітового порівняння з ПК),
 //                 *_mppm — концентрації в мілі-ppm, cyc_* — такти передобробки й виведення
 //              "B,n,total_cycles_lo,total_cycles_hi,cpu_hz"
+//              "D,n,period_ms,total_cycles_lo,total_cycles_hi,cpu_hz"   (такти передобробки+виведення)
 //              "E,<код>"                        — помилка
 #include <math.h>
 #include <stdint.h>
@@ -189,6 +193,33 @@ void cmd_bench() {
   Line().s("B,").u(n).c().u(uint32_t(total)).c().u(uint32_t(total >> 32)).c().u(hal_cpu_hz()).send();
 }
 
+void cmd_duty() {
+  uint8_t b[4];
+  if (hal_read(b, 4) != 0) { Line().s("E,read").send(); return; }
+  const uint32_t n = b[0] | (uint32_t(b[1]) << 8);
+  const uint32_t period_ms = b[2] | (uint32_t(b[3]) << 8);
+  Line().s("# duty n=").u(n).s(" period_ms=").u(period_ms).send();
+  hal_duty_begin(period_ms);
+  uint64_t total = 0;
+  for (uint32_t k = 0; k < n; ++k) {
+    hal_duty_wait();                                  // deep sleep до тіку STIMER
+    const uint32_t t0 = hal_cycles();
+    hal_profile_pin(1);
+    preprocess(g_raw);                                // повна робота на одне вікно
+    g_interp->Invoke();
+    hal_profile_pin(0);
+    total += uint32_t(hal_cycles() - t0);
+  }
+  hal_duty_end();
+  Line().s("D,").u(n).c().u(period_ms).c().u(uint32_t(total)).c().u(uint32_t(total >> 32))
+        .c().u(hal_cpu_hz()).send();
+}
+
+void cmd_sleep() {
+  Line().s("# sleep").send();
+  hal_sleep_forever();                                // на платі не повертається
+}
+
 }  // namespace
 
 int main() {
@@ -217,6 +248,8 @@ int main() {
       if (cmd == 'I') cmd_infer();
       else if (cmd == 'B') cmd_bench();
       else if (cmd == 'P') cmd_info();
+      else if (cmd == 'D') cmd_duty();
+      else if (cmd == 'S') cmd_sleep();
       else Line().s("E,cmd").send();
       cur = 0;
     }

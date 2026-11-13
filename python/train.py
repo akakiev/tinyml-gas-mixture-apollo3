@@ -281,8 +281,8 @@ def main():
     from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
     from sklearn.preprocessing import StandardScaler
     F = {k: C.window_features(s.X[k]) for k in s.X}
-    rf_c = RandomForestClassifier(200, n_jobs=-1, class_weight="balanced", random_state=args.seed)
-    rf_r = RandomForestRegressor(200, n_jobs=-1, random_state=args.seed, min_samples_leaf=2)
+    rf_c = RandomForestClassifier(200, n_jobs=None, class_weight="balanced", random_state=args.seed)
+    rf_r = RandomForestRegressor(200, n_jobs=None, random_state=args.seed, min_samples_leaf=2)
     rf_c.fit(F["train"], s.y_cls["train"])
     rf_r.fit(F["train"], s.y_ppm["train"])
     res["random_forest"] = C.metrics(yt_cls, rf_c.predict(F["test"]), yt_ppm, rf_r.predict(F["test"]))

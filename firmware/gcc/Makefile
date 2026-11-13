@@ -5,6 +5,8 @@
 #   make SDKPATH=~/AmbiqSuiteSDK TFLM_DIR=~/tflite-micro
 #   make SDKPATH=... TFLM_DIR=... bootload_asb COM_PORT=COM8
 #   make ... EXTRA_DEFS="-DUSE_BURST_MODE"             # TurboSPOT 96 МГц
+#   make ... TFLM_KERNELS=reference ARENA_SIZE=65536    # float32 без CMSIS-NN
+#   Між збірками різних варіантів завжди робіть make clean (зміна EXTRA_DEFS не перезбирає .o).
 #   make ... EXTRA_DEFS="-DPROFILE_PIN=<вільний GPIO>"  # тригер для профайлера живлення
 #
 # Важливо: бібліотека TFLM і ця прошивка мають збиратися ОДНИМ компілятором
@@ -18,7 +20,15 @@ PYTHON3         ?= python3
 SDKPATH         ?=
 BOARD           ?= edge
 TFLM_DIR        ?=
-TFLM_LIB        ?= $(firstword $(wildcard $(TFLM_DIR)/gen/cortex_m_generic_cortex-m4+fp_release*/lib/libtensorflow-microlite.a))
+# Яку бібліотеку TFLM брати: cmsis_nn (рядки int8) або reference (рядок float32 «без CMSIS-NN»).
+# Обидві збірки лежать поруч у $(TFLM_DIR)/gen/, тому бібліотеку вибираємо явно, а не першу знайдену.
+TFLM_KERNELS    ?= cmsis_nn
+ifeq ($(TFLM_KERNELS),reference)
+TFLM_LIB        ?= $(firstword $(wildcard $(TFLM_DIR)/gen/cortex_m_generic_cortex-m4+fp_release_gcc/lib/libtensorflow-microlite.a))
+else
+TFLM_LIB        ?= $(firstword $(wildcard $(TFLM_DIR)/gen/cortex_m_generic_cortex-m4+fp_release_$(TFLM_KERNELS)_gcc/lib/libtensorflow-microlite.a))
+endif
+$(info TFLM_LIB = $(TFLM_LIB))
 # Мають збігатися з BUILD_TYPE бібліотеки TFLM (release)
 TFLM_DEFS       ?= -DNDEBUG -DTF_LITE_STRIP_ERROR_STRINGS
 ARENA_SIZE      ?= 16384
@@ -32,7 +42,7 @@ ifeq ($(TFLM_DIR),)
     $(error Вкажіть TFLM_DIR=шлях до tflite-micro)
 endif
 ifeq ($(TFLM_LIB),)
-    $(error Не знайдено libtensorflow-microlite.a для cortex-m4+fp — див. README, крок 3)
+    $(error Не знайдено libtensorflow-microlite.a для cortex-m4+fp і TFLM_KERNELS=$(TFLM_KERNELS) — див. HIL_KIT_README.md, крок 4)
 endif
 ifeq ($(COM_PORT),)
     COM_PORT = COM4

@@ -14,6 +14,12 @@ uint32_t hal_cycles(void);                       // поточне значен�
 uint32_t hal_cpu_hz(void);                       // частота ядра, Гц
 void     hal_profile_pin(int level);             // GPIO-мітка для профайлера живлення (якщо задано)
 
+// Енергетичні режими (команди 'S' і 'D' у main.cc)
+void     hal_sleep_forever(void);                // вимкнути UART і заснути глибоким сном; вихід — RST
+void     hal_duty_begin(uint32_t period_ms);     // вимкнути UART, запустити STIMER (LFRC ~1024 Гц)
+void     hal_duty_wait(void);                    // глибокий сон до наступного тіку STIMER
+void     hal_duty_end(void);                     // зупинити STIMER, увімкнути UART
+
 #ifdef __cplusplus
 }
 #endif

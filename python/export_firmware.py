@@ -18,6 +18,8 @@ ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDe
 ap.add_argument("--variant", choices=["float32", "ptq_int8", "qat_int8"], required=True)
 ap.add_argument("--out-dir", default=os.path.join(T.ROOT, "results"))
 a = ap.parse_args()
+print("УВАГА: для вимірювань до статті використовуйте python/use_variant.py (готові variants/).\n"
+      "export_firmware.py перезаписує прошивку моделлю з results/ds_cnn_<variant>.tflite.")
 
 pre = np.load(os.path.join(a.out_dir, "preproc.npz"))
 hil = np.load(os.path.join(a.out_dir, "hil_test.npz"))
