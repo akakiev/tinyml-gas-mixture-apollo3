@@ -1,0 +1,40 @@
+{
+  "title": "tinyml-gas-mixture-apollo3: TinyML gas-mixture recognition on the Ambiq Apollo3 Blue",
+  "upload_type": "software",
+  "description": "Code and on-board results for the paper 'TinyML Gas-Mixture Recognition on an Ultra-Low-Power Microcontroller: Lessons from Simulation and Leakage-Free Real-Data Evaluation' (AIR'2026). Training and int8 quantization of a depthwise-separable 1D-CNN and feature baselines on the UCI dynamic gas-mixture recordings with a chronological split, TensorFlow Lite Micro firmware for the SparkFun Edge (Ambiq Apollo3 Blue), a hardware-in-the-loop protocol and the measured latency, Flash and arena of three firmware variants.",
+  "creators": [
+    {
+      "name": "Baraban, Serhii",
+      "affiliation": "Poznan University of Technology",
+      "orcid": "0000-0001-9535-1644"
+    },
+    {
+      "name": "Zhahlovska, Olena",
+      "affiliation": "American University in the Emirates",
+      "orcid": "0000-0001-9493-6798"
+    }
+  ],
+  "license": "MIT",
+  "keywords": [
+    "TinyML",
+    "electronic nose",
+    "metal-oxide gas sensors",
+    "data leakage",
+    "quantization",
+    "TensorFlow Lite Micro",
+    "Apollo3"
+  ],
+  "related_identifiers": [
+    {
+      "identifier": "https://archive.ics.uci.edu/dataset/322",
+      "relation": "references",
+      "scheme": "url"
+    },
+    {
+      "identifier": "10.1016/j.snb.2015.03.028",
+      "relation": "references",
+      "scheme": "doi"
+    }
+  ],
+  "version": "1.0.0"
+}

@@ -1,166 +1,151 @@
-# TinyML-розпізнавання складу газових сумішей на Ambiq Apollo3
+# TinyML gas-mixture recognition on the Ambiq Apollo3 Blue (SparkFun Edge)
 
-*TinyML recognition of gas-mixture composition and concentration estimation with a multi-task
-depthwise-separable 1D-CNN (4.4 k parameters, int8) on the Ambiq Apollo3 Blue microcontroller
-(SparkFun Edge): training, PTQ/QAT quantization, TensorFlow Lite Micro firmware and
-hardware-in-the-loop evaluation. Documentation is in Ukrainian.*
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
-Код для експериментів до статті «Розпізнавання складу газових сумішей на основі TinyML на
-ультранизькоенергетичному мікроконтролері Ambiq Apollo3»: навчання DS-1D-CNN, квантизація,
-прошивка для SparkFun Edge і вимірювання в режимі hardware-in-the-loop (HIL).
+Code and on-board results for the paper
+
+> S. Baraban, O. Zhahlovska. *TinyML Gas-Mixture Recognition on an Ultra-Low-Power Microcontroller:
+> Lessons from Simulation and Leakage-Free Real-Data Evaluation.* Artificial Intelligence Research
+> (AIR'2026), American University in the Emirates, Dubai (Springer proceedings, in press).
+
+The repository contains the full pipeline: data preparation for the public UCI *Gas sensor array under
+dynamic gas mixtures* recordings, training of a multi-task depthwise-separable 1D-CNN and of feature
+baselines, int8 quantization (PTQ and QAT), TensorFlow Lite Micro (TFLM) firmware for the SparkFun Edge
+(Apollo3 Blue, Cortex-M4F) and a hardware-in-the-loop (HIL) protocol that streams test windows to the board
+over UART and compares its raw int8 outputs with the PC interpreter.
+
+## Main results
+
+Real data, chronological 70/15/15 split, 10-s windows, seed 42 (Table 2 of the paper):
+
+| Model | Size | Ethylene + CO accuracy | Ethylene + CH4 accuracy |
+|---|---|---|---|
+| DS-1D-CNN, float32 / int8 QAT (4,374 parameters, 186,816 MACs) | 14.0 KB (int8) | 55.9 % / 60.0 % | 82.5 % |
+| int8 MLP on 48 window statistics | 8.1 KB | **85.9 %** | **85.8 %** |
+
+A random split of overlapping windows inflates the CNN's accuracy by 19 percentage points
+(86.9 % vs 67.6 % with identical training settings).
+
+On the SparkFun Edge, measured on 13 Nov 2026 ([`hil_results/`](hil_results/), Table 4 of the paper):
+
+| Firmware | Flash | Arena | Latency | Energy* | I_avg* (1 inference/s) |
+|---|---|---|---|---|---|
+| float32, reference kernels, 48 MHz | 72.9 KB | 15.0 KB | 86.88 ms | 141.7 uJ | 49.6 uA |
+| int8 QAT, CMSIS-NN, 48 MHz | 105.4 KB | 6.1 KB | 23.43 ms | 38.2 uJ | 19.0 uA |
+| int8 QAT, CMSIS-NN, 96 MHz (TurboSPOT) | 105.8 KB | 6.1 KB | 11.76 ms | 100.6 uJ | 43.6 uA |
+
+The int8 firmware agrees with the PC TFLite interpreter in 100 % of class decisions on 500 test windows
+(raw outputs within 1 LSB). \*Energy and average current are **estimates** from the measured latency and typical
+datasheet currents (Apollo3 Blue SoC Datasheet DS-A3-1p2p0, Table 1175, 3.3 V); MCU only, sensor heaters
+excluded. The float32 row uses a network of the same architecture from another training run and is reported
+for cost only (see [`variants/README.md`](variants/README.md)).
+
+## Repository layout
 
 ```
 python/
-  common.py           дані UCI, передобробка, вікна, розбиття, модель, метрики
-  train.py            повний експеримент -> табл. 2 + експорт моделі в прошивку
-  export_firmware.py  перемкнути модель у прошивці (float32 / ptq_int8 / qat_int8) без навчання
-  hil_host.py         HIL-вимірювання на платі -> табл. 3
+  common.py            UCI data loading, decimation, windows, chronological split, models, metrics
+  train.py             main experiment (Table 2) and export of the selected model to the firmware
+  extra_real.py        size-constrained random forest, int8 MLP, chronological vs random split (ethylene + CO)
+  extra_methane.py     the same baselines on the ethylene + methane recording
+  hil_host.py          HIL host: accuracy check, latency benchmark, duty-cycle and deep-sleep modes
+  use_variant.py       switch the firmware model between the prepared variants (no retraining)
+  export_firmware.py   export a .tflite from results/ into the firmware (not used for the paper numbers)
 firmware/
-  src/main.cc         TFLM-інференс, передобробка, протокол UART
-  src/hal_apollo3.c   UART, лічильник тактів DWT, TurboSPOT, GPIO-тригер (AmbiqSuite)
-  src/model_data.cc   модель (генерується; у репозиторії — заглушка)
-  src/model_config.h  статистики нормування (генерується)
-  gcc/Makefile        збірка для SparkFun Edge + bootload_asb / bootload_svl
-  host/               та сама прошивка як програма для ПК (перевірка без плати)
+  src/main.cc          TFLM inference, on-device preprocessing, UART protocol
+  src/hal_apollo3.c    UART, DWT cycle counter, TurboSPOT, deep sleep, STIMER duty cycle, profiler GPIO
+  gcc/Makefile         build for the SparkFun Edge (AmbiqSuite SDK)
+  host/                the same firmware built as a PC program (verification without the board)
+variants/              firmware model files: qat_int8 (the paper model) and float32 (cost only)
+results/               model files (.tflite) and preprocessing statistics
+hil_results/           raw on-board results behind Table 4, image sizes and tool versions
+build_all.sh           builds the three firmware images (WSL/Linux)
+flash.cmd              flashes an image from Windows through the Ambiq secure bootloader
+HIL_KIT_README.md      step-by-step guide for the board measurements (in Ukrainian)
 ```
 
-## Що вже перевірено, а що ні
+## Reproducing the results
 
-Перевірено на вашому комп'ютері (Linux-середовище Claude, TF 2.15.1, tfmot 0.8.0), на штучних даних:
+### 1. Python environment
 
-| Частина | Результат |
-|---|---|
-| `train.py --synthetic --epochs 15 --qat-epochs 3` — весь конвеєр | працює: дані → базові моделі → CNN → PTQ → QAT → TFLite → експорт у прошивку |
-| Якість на штучних даних (лише перевірка, НЕ для статті) | CNN float32 93,7 %, int8 PTQ 93,7 %, int8 QAT 94,0 % |
-| Прошивка `main.cc` + TFLM (збірка для ПК) з експортованою моделлю | збіг класу з еталоном TFLite — **100 %** (521 вікно); різниця сирих int8-виходів ≤ 2 LSB |
-| Арена TFLM | 6 912 Б на x86-64 (на Cortex-M — менше; беріть значення з плати) |
-| Модель | 4 374 параметри, 186 816 MAC; файл .tflite int8 ≈ 14 КБ (ваги ≈ 4,4 КБ + метадані, масштаби, int32-зміщення) |
-| `hal_apollo3.c` | синтаксис перевірено проти заголовків AmbiqSuite SDK 2.4 |
-| Крос-компіляція і запуск на SparkFun Edge | **ще не виконувались** |
-
-Набір UCI з того середовища недоступний (мережевий фільтр), тому справжній експеримент
-запускайте у Windows (крок 2) — там обмежень немає, і він швидший.
-
-Нюанс TensorFlow 2.15: **не встановлюйте `tf_keras`** — з ним QAT падає («not a supported
-layer type»). `common.setup_keras_env()` сам вибирає правильний Keras для TF 2.15 і 2.16+.
-
-## 1. Python-середовище
-
-Потрібен Python 3.10 або 3.11 (TensorFlow 2.15 не підтримує новіші). У Windows (`cmd`)
-створюйте середовище з **коротким шляхом**, інакше `pip` може впасти з `WinError 206`
-(задовгий шлях, особливо з Python із Microsoft Store). Команди — по одній:
-
-```cmd
-python -m venv C:\venvs\tg
-C:\venvs\tg\Scripts\activate
-python -m pip install -r requirements.txt
-```
-
-Linux/WSL: `python3 -m venv .venv && source .venv/bin/activate && pip install -r requirements.txt`.
-
-## 2. Навчання й табл. 2
+Python 3.10 or 3.11 (TensorFlow 2.15 does not support newer versions).
 
 ```bash
-cd python
-python train.py --synthetic --epochs 15 --qat-epochs 3  # ~3 хв: перевірка, що все встановлено
-python train.py                                         # основний експеримент (етилен + CO)
-python train.py --recording methane --no-export         # узагальнення (етилен + метан)
+python -m venv .venv && source .venv/bin/activate      # Windows: .venv\Scripts\activate
+pip install -r requirements.txt
 ```
 
-Скрипт сам завантажить набір UCI (≈ 250 МБ). Якщо завантаження не працює, візьміть архів зі
-сторінки https://archive.ics.uci.edu/dataset/322 і розпакуйте `ethylene_CO.txt` та
-`ethylene_methane.txt` у папку `data/`.
+Do not install `tf_keras` with TF 2.15: QAT then fails with "not a supported layer type".
 
-Результати в `results/`:
-- `table2_co.md` — готові рядки табл. 2 (accuracy, macro-F1, MAE, R², розмір);
-- `results_co.json` — усе, включно з матрицями плутанини (для тексту про помилки на перехідних ділянках);
-- `ds_cnn_*.tflite`, `hil_test.npz`, `preproc.npz`.
-
-Прошивка автоматично отримує кращу з int8-моделей (PTQ чи QAT за macro-F1 на валідації).
-
-## 3. Бібліотека TFLM для Cortex-M4F (Linux або WSL)
+### 2. Training and Table 2
 
 ```bash
-git clone https://github.com/tensorflow/tflite-micro && cd tflite-micro
-make -f tensorflow/lite/micro/tools/make/Makefile -j8 \
-     TARGET=cortex_m_generic TARGET_ARCH=cortex-m4+fp OPTIMIZED_KERNEL_DIR=cmsis_nn \
-     BUILD_TYPE=release microlite
+python python/train.py --synthetic --epochs 15 --qat-epochs 3   # about 3 min: installation check
+python python/train.py                                          # main experiment (ethylene + CO)
+python python/train.py --recording methane --no-export          # second recording (ethylene + methane)
+python python/extra_real.py                                     # baselines and split comparison (needs data/co_decim10.npz from train.py)
+python python/extra_methane.py
 ```
 
-Make сам завантажить ARM GCC у `tensorflow/lite/micro/tools/make/downloads/gcc_embedded/`.
-**Прошивку збирайте тим самим компілятором**, що й бібліотеку (див. `TOOLCHAIN` нижче).
-Для рядка «float32 без CMSIS-NN» у табл. 3 зберіть другу бібліотеку без `OPTIMIZED_KERNEL_DIR`.
+`train.py` downloads the UCI data set (dataset 322, about 250 MB). If the download fails, take the archive from
+https://archive.ics.uci.edu/dataset/322 and unpack `ethylene_CO.txt` and `ethylene_methane.txt` into `data/`.
+Note that the CNN's accuracy on the drifting test period depends noticeably on the training schedule.
 
-## 4. Прошивка для SparkFun Edge
+### 3. Firmware (Linux or WSL)
 
 ```bash
 git clone --recursive https://github.com/sparkfun/AmbiqSuiteSDK ~/AmbiqSuiteSDK
-cd firmware/gcc
-TC=~/tflite-micro/tensorflow/lite/micro/tools/make/downloads/gcc_embedded/bin/arm-none-eabi
-make SDKPATH=~/AmbiqSuiteSDK TFLM_DIR=~/tflite-micro TOOLCHAIN=$TC
-make SDKPATH=~/AmbiqSuiteSDK TFLM_DIR=~/tflite-micro TOOLCHAIN=$TC bootload_asb COM_PORT=/dev/ttyUSB0
+git clone https://github.com/tensorflow/tflite-micro ~/tflite-micro && cd ~/tflite-micro
+git checkout b8d75cbf   # commit used for the paper
+make -f tensorflow/lite/micro/tools/make/Makefile -j8 TARGET=cortex_m_generic \
+     TARGET_ARCH=cortex-m4+fp OPTIMIZED_KERNEL_DIR=cmsis_nn BUILD_TYPE=release microlite
+make -f tensorflow/lite/micro/tools/make/Makefile -j8 TARGET=cortex_m_generic \
+     TARGET_ARCH=cortex-m4+fp BUILD_TYPE=release microlite
+cd <this repository> && bash build_all.sh   # builds/A_float32_48MHz.bin, B_int8_48MHz.bin, C_int8_96MHz.bin
 ```
 
-У Windows зручно збирати у WSL, а завантажувати з Windows тією самою командою `asb.py`, яку
-друкує `make bootload_asb` (з `-port COM8`). Перед завантаженням через ASB утримуйте кнопку
-14 і натисніть Reset.
+The paper images were built with TFLM `b8d75cbf`, AmbiqSuiteSDK `e280cbde` and Arm GNU Toolchain 14.3.Rel1
+([`hil_results/versions.txt`](hil_results/versions.txt)); their md5 sums are listed in
+[`hil_results/README.md`](hil_results/README.md).
 
-`make` друкує розмір образу (`arm-none-eabi-size`): **Flash = text + data**.
-Опції: `EXTRA_DEFS="-DUSE_BURST_MODE"` (96 МГц), `EXTRA_DEFS="-DPROFILE_PIN=<GPIO>"`,
-`ARENA_SIZE=...`, `HIL_BAUD=...`.
+### 4. Flashing and HIL measurements (Windows)
 
-Без плати ту саму прошивку можна перевірити на ПК:
+```cmd
+pip install numpy pyserial pycryptodome
+rem hold button 14, press and release RST, then:
+flash.cmd COM8 builds\B_int8_48MHz.bin
+python python\hil_host.py --port COM8 --npz variants\qat_int8\hil_test.npz --n 500 --bench 1000 --out results\hil_int8_48MHz.json
+```
+
+`hil_host.py --duty N` runs N cycles of "deep sleep, wake on STIMER, preprocess + infer" with a 1-s period and
+`--sleep` puts the board into deep sleep, so that the average and sleep currents can be measured with a power
+profiler (GPIO 36 is high during inference). These modes were not used for the paper, because no current
+measurement was made. Without a board, the firmware can be checked on a PC:
 
 ```bash
-cd tflite-micro && make -f tensorflow/lite/micro/tools/make/Makefile BUILD_TYPE=release microlite
-cd firmware/host && make TFLM_DIR=~/tflite-micro selftest       # модель-тест із випадковими вагами
-make TFLM_DIR=~/tflite-micro && python ../../python/hil_host.py --exec ./gas_host --n 100
+cd firmware/host && make TFLM_DIR=~/tflite-micro && python ../../python/hil_host.py --exec ./gas_host --n 100
 ```
 
-## 5. HIL-вимірювання й табл. 3
-> **Оновлення (листопад 2026).** Покрокова інструкція для SparkFun Edge, енергетичні режими прошивки
-> (deep sleep, «1 виведення/с»), готові варіанти моделі статті та скрипти `build_all.sh` / `flash.cmd` —
-> у [HIL_KIT_README.md](HIL_KIT_README.md). Модель для вимірювань перемикайте `python/use_variant.py`,
-> а не `export_firmware.py`.
+## Data
 
+UCI Machine Learning Repository, *Gas sensor array under dynamic gas mixtures* (J. Fonollosa, 2015),
+https://archive.ics.uci.edu/dataset/322; see also Fonollosa et al., Sensors and Actuators B 215 (2015) 618-629,
+https://doi.org/10.1016/j.snb.2015.03.028. The data are not redistributed here.
 
-```bash
-cd python
-python hil_host.py --port COM8 --n 500 --bench 1000
-```
+## Citation
 
-Що звіряти:
-- `class_agreement_with_pc_pct` має бути ≈ 100 %, а `max_abs_diff_int8_*` — 0–2
-  (невеликі розбіжності дає округлення `log1pf` у передобробці);
-- `mcu_mae_ppm` може бути трохи кращим за MAE з `table2`, бо прошивка обрізає від'ємні
-  концентрації до 0 — так і опишіть у тексті;
-- `bench_inference_ms` — затримка; `arena_used` — RAM-арена (стовпець «RAM (arena)»);
-- `preprocess_ms_mean` — час передобробки (варто згадати в тексті окремо).
+If you use this code, please cite the paper above and this software archive (see [`CITATION.cff`](CITATION.cff)):
 
-**Енергія.** Під'єднайте Nordic PPK2 / Joulescope в розрив живлення плати (бажано вимкнути
-світлодіод живлення), запустіть `--bench 30000` (кілька секунд стабільного навантаження),
-зафіксуйте середній струм `I_act`, потім струм у глибокому сні `I_sleep`, і передайте їх:
+> Baraban, S., Zhahlovska, O. (2026). tinyml-gas-mixture-apollo3 (v1.0.0). Zenodo.
 
-```bash
-python hil_host.py --port COM8 --n 0 --bench 30000 --v 3.3 --i-active-ma <I_act> --i-sleep-ua <I_sleep>
-```
+## Authors and maintenance
 
-Скрипт обчислить `energy_uj_per_inference` = V·I_act·t і `avg_current_ua_1hz` для режиму
-«1 виведення/с». Зауважте, що I_act містить і фонове споживання плати (USB-UART тощо); для
-чистішої оцінки віднімайте струм тієї ж плати в активному циклі очікування.
+- Serhii Baraban, Poznan University of Technology, Poland ([ORCID 0000-0001-9535-1644](https://orcid.org/0000-0001-9535-1644)), serhii.baraban@put.poznan.pl
+- Olena Zhahlovska, American University in the Emirates, Dubai, United Arab Emirates ([ORCID 0000-0001-9493-6798](https://orcid.org/0000-0001-9493-6798)), olena.zhahlovska@aue.ae
 
-Рядки табл. 3:
-1. `python export_firmware.py --variant float32`, прошивка з бібліотекою без CMSIS-NN → рядок float32;
-2. `python export_firmware.py --variant qat_int8` (або `ptq_int8`), бібліотека з CMSIS-NN → рядок int8;
-3. те саме з `EXTRA_DEFS="-DUSE_BURST_MODE"` → рядок 96 МГц.
+The repository is maintained by the first author under the GitHub account `akakiev`.
+A Ukrainian version of this description is in [`README_uk.md`](README_uk.md).
 
-## Що оновити в тексті статті
+## License
 
-- **Децимація:** у коді — усереднення за блоками по 10 відліків (найпростіший антиаліасинговий
-  фільтр). Так і напишіть у п. 3.4 або замініть фільтр у `common.load_recording`.
-- **Softmax:** модель видає логіти, softmax обчислюється після деквантизації (для класу достатньо
-  argmax). Рис. 2 лишається коректним за змістом.
-- **RAM:** у п. 3.5 оцінка 3,2 КБ стосується лише активацій; у табл. 3 вписуйте `arena_used`
-  з плати — вона більша, бо включає службові структури TFLM.
-- **1D-згортки** реалізовано як Conv2D/DepthwiseConv2D з ядром (k, 1). Це стандартний прийом:
-  саме так їх виконують оптимізовані ядра CMSIS-NN. Можна згадати одним реченням у п. 3.6.
+MIT, see [`LICENSE`](LICENSE).

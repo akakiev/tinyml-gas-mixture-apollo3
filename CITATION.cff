@@ -1,0 +1,46 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below and cite the accompanying paper."
+type: software
+title: "tinyml-gas-mixture-apollo3: TinyML gas-mixture recognition on the Ambiq Apollo3 Blue"
+version: 1.0.0
+date-released: "2026-11-13"
+license: MIT
+repository-code: "https://github.com/akakiev/tinyml-gas-mixture-apollo3"
+authors:
+  - family-names: Baraban
+    given-names: Serhii
+    affiliation: "Poznan University of Technology"
+    orcid: "https://orcid.org/0000-0001-9535-1644"
+    email: serhii.baraban@put.poznan.pl
+  - family-names: Zhahlovska
+    given-names: Olena
+    affiliation: "American University in the Emirates"
+    orcid: "https://orcid.org/0000-0001-9493-6798"
+    email: olena.zhahlovska@aue.ae
+keywords:
+  - TinyML
+  - electronic nose
+  - metal-oxide gas sensors
+  - data leakage
+  - quantization
+  - TensorFlow Lite Micro
+  - Apollo3
+preferred-citation:
+  type: conference-paper
+  title: "TinyML Gas-Mixture Recognition on an Ultra-Low-Power Microcontroller: Lessons from Simulation and Leakage-Free Real-Data Evaluation"
+  authors:
+    - family-names: Baraban
+      given-names: Serhii
+      orcid: "https://orcid.org/0000-0001-9535-1644"
+    - family-names: Zhahlovska
+      given-names: Olena
+      orcid: "https://orcid.org/0000-0001-9493-6798"
+  collection-title: "Artificial Intelligence Research (AIR'2026)"
+  conference:
+    name: "Artificial Intelligence Research (AIR'2026)"
+    city: Dubai
+    country: AE
+  publisher:
+    name: Springer
+  year: 2026
+  notes: "In press."
