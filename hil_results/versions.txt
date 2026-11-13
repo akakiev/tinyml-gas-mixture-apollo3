@@ -1,0 +1,3 @@
+tflite-micro: b8d75cbf6b8009762bc1e3ee4817bc33e5dcee47
+AmbiqSuiteSDK: e280cbde3e366509da6768ab95471782a05d2371
+gcc: arm-none-eabi-gcc (Arm GNU Toolchain 14.3.Rel1 (Build arm-14.174)) 14.3.1 20250623

@@ -1,0 +1,4 @@
+variant,flash_B,arena_B,latency_ms,preproc_ms,I_run_uA,P_run_mW,E_inf_uJ,E_inf_uJ_prime,E_job_uJ,I_avg_1Hz_uA,agreement_pct,acc_pct,n_windows
+"float32, no CMSIS-NN, 48 MHz",74640,15392,86.88,5.85,494.4,1.632,141.7,110.1,151.3,49.6,100.0,39.5,200
+"int8 QAT, CMSIS-NN, 48 MHz",107924,6296,23.43,6.93,494.4,1.632,38.2,29.7,49.5,19.0,100.0,60.0,500
+"int8 QAT, CMSIS-NN, 96 MHz",108376,6296,11.76,3.48,2592.0,8.554,100.6,85.7,130.4,43.6,100.0,60.0,500

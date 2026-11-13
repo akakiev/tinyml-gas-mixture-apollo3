@@ -1,0 +1,28 @@
+{
+  "label": "int8 48MHz",
+  "device": {
+    "model_bytes": "14360",
+    "arena_used": "6296",
+    "arena_size": "16384",
+    "cpu_hz": "48000000",
+    "in_type": "int8",
+    "win": "100",
+    "ch": "16"
+  },
+  "n_windows": 500,
+  "preprocess_ms_mean": 6.92988075,
+  "inference_ms_mean": 23.438552083333335,
+  "inference_ms_std": 0.0012568820963665076,
+  "inference_cycles_mean": 1125050.5,
+  "mcu_accuracy_pct": 60.0,
+  "mcu_mae_ppm": [
+    2.553342006103519,
+    63.287746211181634
+  ],
+  "pc_accuracy_pct_same_windows": 60.0,
+  "class_agreement_with_pc_pct": 100.0,
+  "max_abs_diff_int8_logits": 1,
+  "max_abs_diff_int8_conc": 1,
+  "bench_n": 1000,
+  "bench_inference_ms": 23.434191583333334
+}

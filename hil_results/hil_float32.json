@@ -1,0 +1,28 @@
+{
+  "label": "float32 48MHz",
+  "device": {
+    "model_bytes": "22396",
+    "arena_used": "15392",
+    "arena_size": "65536",
+    "cpu_hz": "48000000",
+    "in_type": "float32",
+    "win": "100",
+    "ch": "16"
+  },
+  "n_windows": 200,
+  "preprocess_ms_mean": 5.851436770833334,
+  "inference_ms_mean": 86.89049125000001,
+  "inference_ms_std": 0.0039292480550071895,
+  "inference_cycles_mean": 4170743.58,
+  "mcu_accuracy_pct": 39.5,
+  "mcu_mae_ppm": [
+    3.944925008010866,
+    106.2327155371094
+  ],
+  "pc_accuracy_pct_same_windows": 39.5,
+  "class_agreement_with_pc_pct": 100.0,
+  "max_abs_diff_int8_logits": 1,
+  "max_abs_diff_int8_conc": 0,
+  "bench_n": 300,
+  "bench_inference_ms": 86.87680326388889
+}
