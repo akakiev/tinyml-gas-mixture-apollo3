@@ -34,6 +34,18 @@
       "identifier": "10.1016/j.snb.2015.03.028",
       "relation": "references",
       "scheme": "doi"
+    },
+    {
+      "identifier": "10.34740/kaggle/dsv/22633462",
+      "relation": "isSupplementedBy",
+      "resource_type": "dataset",
+      "scheme": "doi"
+    },
+    {
+      "identifier": "https://www.kaggle.com/code/serhiibaraban85/leakage-free-tinyml-gas-mixture-recognition",
+      "relation": "isSupplementedBy",
+      "resource_type": "software",
+      "scheme": "url"
     }
   ],
   "version": "1.0.0"

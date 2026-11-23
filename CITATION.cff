@@ -13,6 +13,12 @@ identifiers:
   - type: doi
     value: "10.5281/zenodo.24207493"
     description: "All versions (concept DOI)"
+  - type: doi
+    value: "10.34740/kaggle/dsv/22633462"
+    description: "Derived Kaggle dataset: 10 Hz recordings, chronological split, paper models, on-board results"
+  - type: url
+    value: "https://www.kaggle.com/code/serhiibaraban85/leakage-free-tinyml-gas-mixture-recognition"
+    description: "Kaggle notebook reproducing Tables 2 and 3 of the paper"
 repository-code: "https://github.com/akakiev/tinyml-gas-mixture-apollo3"
 authors:
   - family-names: Baraban

@@ -2,6 +2,8 @@
 
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.24207494.svg)](https://doi.org/10.5281/zenodo.24207494)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![Kaggle notebook](https://img.shields.io/badge/Kaggle-notebook-20BEFF?logo=kaggle&logoColor=white)](https://www.kaggle.com/code/serhiibaraban85/leakage-free-tinyml-gas-mixture-recognition)
+[![Kaggle dataset DOI](https://img.shields.io/badge/Kaggle%20dataset-10.34740%2Fkaggle%2Fdsv%2F22633462-20BEFF)](https://doi.org/10.34740/kaggle/dsv/22633462)
 
 Code and on-board results for the paper
 
@@ -64,6 +66,18 @@ build_all.sh           builds the three firmware images (WSL/Linux)
 flash.cmd              flashes an image from Windows through the Ambiq secure bootloader
 HIL_KIT_README.md      step-by-step guide for the board measurements (in Ukrainian)
 ```
+
+## Run it on Kaggle (no installation)
+
+The Kaggle notebook [**Leakage-free TinyML gas-mixture recognition**](https://www.kaggle.com/code/serhiibaraban85/leakage-free-tinyml-gas-mixture-recognition) reproduces Tables 2 and 3 of the paper
+from the original UCI recordings in about 15 minutes on a free Kaggle CPU session, and evaluates the exact `.tflite`
+models used in the paper (CNN int8 QAT 60.0 %, MLP int8 85.9 % on ethylene + CO). Retrained networks vary between
+library versions; on the Kaggle image (TensorFlow 2.21, 23 Nov 2026) the MLP reached 86.0 % / 85.7 % and the random
+split inflated the CNN accuracy by +22.4 percentage points (paper: +19.2).
+
+The companion Kaggle dataset [**Leakage-free TinyML gas-mixture benchmark**](https://www.kaggle.com/datasets/serhiibaraban85/leakage-free-tinyml-gas-mixture-benchmark)
+([doi:10.34740/kaggle/dsv/22633462](https://doi.org/10.34740/kaggle/dsv/22633462), CC BY 4.0) contains both recordings decimated to 10 Hz, the exact
+chronological split, the paper's `.tflite` models with preprocessing constants and the raw on-board results.
 
 ## Reproducing the results
 
@@ -131,7 +145,8 @@ cd firmware/host && make TFLM_DIR=~/tflite-micro && python ../../python/hil_host
 
 UCI Machine Learning Repository, *Gas sensor array under dynamic gas mixtures* (J. Fonollosa, 2015),
 https://archive.ics.uci.edu/dataset/322; see also Fonollosa et al., Sensors and Actuators B 215 (2015) 618-629,
-https://doi.org/10.1016/j.snb.2015.03.028. The data are not redistributed here.
+https://doi.org/10.1016/j.snb.2015.03.028. The raw data are not redistributed here; a derived 10 Hz version with
+the chronological split is available as the Kaggle dataset above ([doi:10.34740/kaggle/dsv/22633462](https://doi.org/10.34740/kaggle/dsv/22633462)).
 
 ## Citation
 
@@ -139,7 +154,11 @@ If you use this code, please cite the paper above and this software archive (see
 
 > Baraban, S., Zhahlovska, O. (2026). tinyml-gas-mixture-apollo3 (v1.0.0). Zenodo. https://doi.org/10.5281/zenodo.24207494
 
-The DOI above identifies version 1.0.0, the version used in the paper; https://doi.org/10.5281/zenodo.24207493 always resolves to the latest version.
+For the derived dataset:
+
+> Baraban, S., Zhahlovska, O. (2026). Leakage-free TinyML gas-mixture benchmark [Data set]. Kaggle. https://doi.org/10.34740/kaggle/dsv/22633462
+
+The software DOI above identifies version 1.0.0, the version used in the paper; https://doi.org/10.5281/zenodo.24207493 always resolves to the latest version.
 
 ## Authors and maintenance
 

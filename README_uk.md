@@ -5,6 +5,10 @@ depthwise-separable 1D-CNN (4.4 k parameters, int8) on the Ambiq Apollo3 Blue mi
 (SparkFun Edge): training, PTQ/QAT quantization, TensorFlow Lite Micro firmware and
 hardware-in-the-loop evaluation. English description: [README.md](README.md). DOI: https://doi.org/10.5281/zenodo.24207494*
 
+**Kaggle:** ноутбук, що відтворює табл. 2 і 3 з вихідних даних UCI (≈15 хв на безкоштовному CPU) і перевіряє моделі статті:
+https://www.kaggle.com/code/serhiibaraban85/leakage-free-tinyml-gas-mixture-recognition · датасет (записи 10 Гц, хронологічне розбиття, моделі `.tflite`, результати з плати, CC BY 4.0):
+https://doi.org/10.34740/kaggle/dsv/22633462
+
 Код для експериментів до статті «TinyML Gas-Mixture Recognition on an Ultra-Low-Power
 Microcontroller: Lessons from Simulation and Leakage-Free Real-Data Evaluation» (AIR'2026): навчання DS-1D-CNN, квантизація,
 прошивка для SparkFun Edge і вимірювання в режимі hardware-in-the-loop (HIL).
